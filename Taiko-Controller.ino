@@ -17,7 +17,9 @@
 #include <Keyboard.h>
 
 // Writes data viewable by the IDE Serial plotter when true.
-bool writeToSerial = true; 
+bool writeToSerial = true;
+// Serial write threshold = 0: Any value above 0 | 1: Any value above 'threshold' | 2: always 
+uint8_t serialWriteThreshold = 0; 
 // Between 1 - 1023, lower is more sensetive.
 int threshold = 15; 
 // Amount above the previously read value from the sensor that is acceptable as a new hit, non-inclusive. (e.g. if 10 was last read and this was 2, then the next value would need to be 13 to register)
@@ -73,7 +75,23 @@ void updateSensors(){
 }
 
 void writeSerial(){
-  if (sensor[0] + sensor[1] + sensor[2] + sensor[3] > 0){
+  bool doPrint;
+  switch(serialWriteThreshold){
+    case 0:
+      doPrint = sensor[0] + sensor[1] + sensor[2] + sensor[3] > 0;
+    break;
+    case 1:
+      doPrint = sensor[0] > threshold || sensor[1] > threshold || sensor[2] > threshold || sensor[3] > threshold;
+    break;
+    case 2:
+      doPrint = true;
+    break;
+    default:
+      doPrint = false;
+    break;
+  }
+
+  if (doPrint){
     Serial.print("Ref:1023");                         // Used to keep the plotters graph uniformly scaled to make reading it a tad easier. Disable or tweak if needed for precision. 
     Serial.print(",Thr:"); Serial.print(threshold);   // Threshold for a hit.
     Serial.print(",LKa:"); Serial.print(sensor[0]);   // Left Ka
